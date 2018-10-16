@@ -69,7 +69,8 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     skip4 = tf.add(output7, vgg_layer4_out)
 
     #up sample
-    output4 =  tf.layers.conv2d_transpose(skip4, num_classes, 4, 2, padding='same',
+    output4 =  tf.layers.conv2d_transpose(skip4, filters=vgg_layer3_out.get_shape().as_list()[-1],
+                                            kernel_size=4, strides=2, padding='same',
                                         kernel_regularizer = tf.contrib.layers.l2_regularizer(1e-3))
 
     #skip connection
