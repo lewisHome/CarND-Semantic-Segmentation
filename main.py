@@ -148,7 +148,7 @@ def run():
     epochs = 10
     batch_size = 5
     image_shape = (160, 576)
-    data_dir = './data'
+    data_dir = '/data'
     runs_dir = './runs'
     tests.test_for_kitti_dataset(data_dir)
 
@@ -167,11 +167,13 @@ def run():
 
         # OPTIONAL: Augment Images for better results
         #  https://datascience.stackexchange.com/questions/5224/how-to-prepare-augment-images-for-neural-network
-        
-        # TODO: Build NN using load_vgg, layers, and optimize function
+        correct_label = tf.placeholder(tf.int32, [None, None, None, num_classes], name='correct_label')
+        learning_rate = tf.placeholder(tf.float32, name='learning_rate')
+
+	# TODO: Build NN using load_vgg, layers, and optimize function
         image_input, keep_prob, layer3, layer4, layer7 = load_vgg(sess, vgg_path)
-        model_ouput = layers(layer3, layer4, layer7, num_classes)
-        logits, train_op, cross_entropy_loss = optimise(model_output, correct_label, learning_rate, num_classes)        
+        model_output = layers(layer3, layer4, layer7, num_classes)
+        logits, train_op, cross_entropy_loss = optimize(model_output, correct_label, learning_rate, num_classes)        
         sess.run(tf.global_variables_initializer())
         sess.run(tf.local_variables_initializer())
 
