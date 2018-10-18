@@ -124,15 +124,14 @@ def train_nn(sess, epochs, batch_size, get_batches_fn,
     :param learning_rate: TF Placeholder for learning rate
     """
     # TODO: Implement function
-    keep_prob = 0.5
     for epoch in range (epochs):
         total_loss = 0
         for X_batch, gt_batch in get_batches_fn(batch_size):
-            loss, _ = sess.run([cross_entropy_loss, train_op],
+            _, loss = sess.run([train_op, cross_entropy_loss],
                                feed_dict={input_image: X_batch,
                                           correct_label: gt_batch,
-                                          keep_prob: keep_prob,
-                                          learning_rate:learning_rate})
+                                          keep_prob: 0.5,
+                                          learning_rate: 0.001})
 
             total_loss += loss;
 
@@ -166,7 +165,7 @@ def run():
 
         # OPTIONAL: Augment Images for better results
         #  https://datascience.stackexchange.com/questions/5224/how-to-prepare-augment-images-for-neural-network
-
+        
         # TODO: Build NN using load_vgg, layers, and optimize function
         image_input, keep_prob, layer3, layer4, layer7 = load_vgg(sess, vgg_path)
         model_ouput = layers(layer3, layer4, layer7, num_classes)
