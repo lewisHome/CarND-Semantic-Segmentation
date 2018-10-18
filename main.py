@@ -59,28 +59,32 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     :return: The Tensor for the last layer of output
     """
     # TODO: Implement function
-    conv_1x1 = tf.layers.conv2d(vgg_layer7_out, num_classes, 1, padding='same',
-                                kernel_regularizer = tf.contrib.layers.l2_regularizer(1e-3))
-    #up sample
-    output7 = tf.layers.conv2d_transpose(conv_1x1, vgg_layer4_out.get_shape().as_list()[-1], 4, strides = 2, padding='same',
-                                        kernel_regularizer = tf.contrib.layers.l2_regularizer(1e-3))
 
-    #skip connection
-    skip4 = tf.add(output7, vgg_layer4_out)
+    # Use a shorter variable name for simplicity
+    layer3, layer4, layer7 = vgg_layer3_out, vgg_layer4_out, vgg_layer7_out
 
-    #up sample
-    output4 =  tf.layers.conv2d_transpose(skip4, filters=vgg_layer3_out.get_shape().as_list()[-1],
-                                            kernel_size=4, strides=2, padding='same',
-                                        kernel_regularizer = tf.contrib.layers.l2_regularizer(1e-3))
+    # Apply 1x1 convolution in place of fully connected layer
+    fcn8 = tf.layers.conv2d(layer7, filters=num_classes, kernel_size=1, name="fcn8")
 
-    #skip connection
-    skip3 = tf.add(output4, vgg_layer3_out)
+    # Upsample fcn8 with size depth=(4096?) to match size of layer 4 so that we can add skip connection with 4th layer
+    fcn9 = tf.layers.conv2d_transpose(fcn8, filters=layer4.get_shape().as_list()[-1],
+    kernel_size=4, strides=(2, 2), padding='SAME', name="fcn9")
 
-    #up sample
-    output3 =  tf.layers.conv2d_transpose(skip4, num_classes, 16, 8, padding='same',
-                                        kernel_regularizer = tf.contrib.layers.l2_regularizer(1e-3))
+    # Add a skip connection between current final layer fcn8 and 4th layer
+    fcn9_skip_connected = tf.add(fcn9, layer4, name="fcn9_plus_vgg_layer4")
 
-    return output3
+    # Upsample again
+    fcn10 = tf.layers.conv2d_transpose(fcn9_skip_connected, filters=layer3.get_shape().as_list()[-1],
+    kernel_size=4, strides=(2, 2), padding='SAME', name="fcn10_conv2d")
+
+    # Add skip connection
+    fcn10_skip_connected = tf.add(fcn10, layer3, name="fcn10_plus_vgg_layer3")
+
+    # Upsample again
+    fcn11 = tf.layers.conv2d_transpose(fcn10_skip_connected, filters=num_classes,
+    kernel_size=16, strides=(8, 8), padding='SAME', name="fcn11")
+    
+    return fcn11
 tests.test_layers(layers)
 
 
@@ -126,6 +130,7 @@ def train_nn(sess, epochs, batch_size, get_batches_fn,
     # TODO: Implement function
     for epoch in range (epochs):
         total_loss = 0
+        cnt = 0
         for X_batch, gt_batch in get_batches_fn(batch_size):
             _, loss = sess.run([train_op, cross_entropy_loss],
                                feed_dict={input_image: X_batch,
@@ -134,18 +139,20 @@ def train_nn(sess, epochs, batch_size, get_batches_fn,
                                           learning_rate: 0.001})
 
             total_loss += loss;
-
-            print("Epoch {} ...".format(epoch+1))
-            print("Loss = {:.3f}".format(total_loss))
-            print()
-            
+            cnt += 1.0
+        
+        print("Epoch {} ...".format(epoch+1))
+        print("Loss = {:.3f}".format(total_loss/cnt))
+        print()
+           
             
 tests.test_train_nn(train_nn)
 
 
+
 def run():
     num_classes = 2
-    epochs = 10
+    epochs = 20
     batch_size = 5
     image_shape = (160, 576)
     data_dir = '/data'
@@ -184,7 +191,7 @@ def run():
                  correct_label, keep_prob, learning_rate)
         
         # TODO: Save inference data using helper.save_inference_samples
-        helper.save_inference_samples(runs_dir, data_dir, sess, image_shape, logits, keep_prob, input_image)
+        helper.save_inference_samples(runs_dir, data_dir, sess, image_shape, logits, keep_prob, image_input)
 
         # OPTIONAL: Apply the trained model to a video
 

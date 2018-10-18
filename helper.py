@@ -1,5 +1,6 @@
 import re
 import random
+import cv2
 import numpy as np
 import os.path
 import scipy.misc
@@ -94,6 +95,28 @@ def gen_batch_function(data_folder, image_shape):
                 images.append(image)
                 gt_images.append(gt_image)
 
+                # apply flip translation
+                image_flipped = np.fliplr(image)
+                gt_image_flipped = np.fliplr(gt_image)
+
+                images.append(image_flipped)
+                gt_images.append(gt_image_flipped)
+                
+                # apply brightness transformation
+                
+                factor = 1.0 + random.uniform(-0.15, 0.15)
+                table = np.array([((i / 255.0) * factor) * 255 for i in np.arange(0, 256)]).astype(np.uint8)
+                image_brightness = cv2.LUT(image, table)
+                
+                images.append(image_brightness)
+                gt_images.append(gt_image)
+
+                factor = 1.0 + random.uniform(-0.15, 0.15)
+                table = np.array([((i / 255.0) * factor) * 255 for i in np.arange(0, 256)]).astype(np.uint8)
+                image_brightness_flipped = cv2.LUT(image_flipped, table)
+                
+                images.append(image_brightness_flipped)
+                gt_images.append(gt_image_flipped)
             yield np.array(images), np.array(gt_images)
     return get_batches_fn
 
