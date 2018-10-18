@@ -131,8 +131,8 @@ def train_nn(sess, epochs, batch_size, get_batches_fn,
             loss, _ = sess.run([cross_entropy_loss, train_op],
                                feed_dict={input_image: X_batch,
                                           correct_label: gt_batch,
-                                          keep_prob: keep_prob_value,
-                                          learning_rate:learning_rate_value})
+                                          keep_prob: keep_prob,
+                                          learning_rate:learning_rate})
 
             total_loss += loss;
 
