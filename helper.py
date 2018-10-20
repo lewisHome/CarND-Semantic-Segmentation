@@ -146,6 +146,57 @@ def gen_test_output(sess, logits, keep_prob, image_pl, data_folder, image_shape)
         street_im.paste(mask, box=None, mask=mask)
 
         yield os.path.basename(image_file), np.array(street_im)
+def gen_video_output(sess, logits, keep_prob, image_pl):
+    """
+    Generate test output using the test images
+    :param sess: TF session
+    :param logits: TF Tensor for the logits
+    :param keep_prob: TF Placeholder for the dropout keep robability
+    :param image_pl: TF Placeholder for the image placeholder
+    :param data_folder: Path to the folder that contains the datasets
+    :param image_shape: Tuple - Shape of image
+    :return: Output for for each test image
+    """
+#    image = scipy.misc.imresize(scipy.misc.imread(image_file), image_shape)
+
+    im_softmax = sess.run(
+            [tf.nn.softmax(logits)],
+            {keep_prob: 1.0, image_pl: [image]})
+    
+    im_softmax = im_softmax[0][:, 1].reshape(image_shape[0], image_shape[1])
+    segmentation = (im_softmax > 0.5).reshape(image_shape[0], image_shape[1], 1)
+    mask = np.dot(segmentation, np.array([[0, 255, 0, 127]]))
+    mask = scipy.misc.toimage(mask, mode="RGBA")
+    street_im = scipy.misc.toimage(image)
+    street_im.paste(mask, box=None, mask=mask)
+
+    yield np.array(street_im)
+
+def record_movie(sess, logits, keep_prob, image_pl):
+    """
+    Generate test output using the test images
+    :param sess: TF session
+    :param logits: TF Tensor for the logits
+    :param keep_prob: TF Placeholder for the dropout keep robability
+    :param image_pl: TF Placeholder for the image placeholder
+    :param data_folder: Path to the folder that contains the datasets
+    :param image_shape: Tuple - Shape of image
+    :return: Output for for each test image
+    """
+    for video in os.listdir("Test_Videos/"):
+        #load video from file
+        print (video)
+        filePath="Test_Videos/"+video
+        white_output = video
+    ## To speed up the testing process you may want to try your pipeline on a shorter subclip of the video
+    ## To do so add .subclip(start_second,end_second) to the end of the line below
+    ## Where start_second and end_second are integer values representing the start and end of the subclip
+    ## You may also uncomment the following line for a subclip of the first 5 seconds
+    ##clip1 = VideoFileClip("test_videos/solidWhiteRight.mp4")
+    clip = VideoFileClip(filePath).subclip(0,5)
+    white_clip = clip.fl_image(gen_test_output(sess, logits, keep_prob, input_image)[1]) #NOTE: this function expects color images!!
+    white_clip.write_videofile(white_output, audio=False)
+    
 
 
 def save_inference_samples(runs_dir, data_dir, sess, image_shape, logits, keep_prob, input_image):

@@ -136,16 +136,15 @@ def train_nn(sess, epochs, batch_size, get_batches_fn,
                                feed_dict={input_image: X_batch,
                                           correct_label: gt_batch,
                                           keep_prob: 0.5,
-                                          learning_rate: 0.001})
+                                          learning_rate: 0.00075})
 
             total_loss += loss;
             cnt += 1.0
-        
-        print("Epoch {} ...".format(epoch+1))
-        print("Loss = {:.3f}".format(total_loss/cnt))
-        print()
-           
-            
+            average_loss = total_loss/cnt
+            print("Epoch {} ...".format(epoch+1))
+            print("Loss = {:.3f}".format(average_loss))
+            print()
+                   
 tests.test_train_nn(train_nn)
 
 
@@ -153,7 +152,7 @@ tests.test_train_nn(train_nn)
 def run():
     num_classes = 2
     epochs = 20
-    batch_size = 5
+    batch_size = 10
     image_shape = (160, 576)
     data_dir = '/data'
     runs_dir = './runs'
@@ -190,10 +189,14 @@ def run():
                  train_op, cross_entropy_loss, image_input,
                  correct_label, keep_prob, learning_rate)
         
+
         # TODO: Save inference data using helper.save_inference_samples
         helper.save_inference_samples(runs_dir, data_dir, sess, image_shape, logits, keep_prob, image_input)
-
+        
         # OPTIONAL: Apply the trained model to a video
+        saver = tf.train.Saver()
+        saver.save(sess,'./tensorflowModel.ckpt')
+        tf.train.write_graph(sess.graph.as_graph_def(), '.', 'tensorflowModel.pbtxt', as_text=True)
 
 
 if __name__ == '__main__':
